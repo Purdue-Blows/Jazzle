@@ -39,7 +39,7 @@ class Song(db.Model):
     performer = db.Column(db.String(100), nullable=False)
     genre = db.Column(db.String(100), nullable=False)
     key = db.Column(db.String(50), nullable=False)
-    audio = db.Column(db.LargeBinary, nullable=False)
+    audio_path = db.Column(db.String(200), nullable=False)
     c_sheet_music_path = db.Column(db.String(200), nullable=False)
     bb_sheet_music_path = db.Column(db.String(200))
     eb_sheet_music_path = db.Column(db.String(200))

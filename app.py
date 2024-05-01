@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory, url_for
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_basicauth import BasicAuth
@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from models.song import Song
 from auth import configure_auth
 
-if not load_dotenv(".env"):
+if not load_dotenv(os.path.join(os.getcwd(), ".env")):
     print("No .env file found")
     exit()
 
@@ -25,9 +25,7 @@ DB_USERNAME = os.getenv("DB_USERNAME")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
-# print(DB_USERNAME, DB_PASSWORD, DB_PORT, DB_NAME, ADMIN_USERNAME, ADMIN_PASSWORD)
+# print(DB_USERNAME, DB_PASSWORD, DB_PORT, DB_NAME)
 
 app = Flask(__name__)
 htmx = HTMX(app)
@@ -44,10 +42,21 @@ with app.app_context():
     db.create_all()
 
 # configure the admin interface
-admin = Admin(app, name="jazzle")
+admin = Admin(app, name="jazzle", template_mode="bootstrap4")
 # Add administrative views here
 
 # Database administrative view
+# class SongView(ModelView):
+#     @expose('/download/<path:filename>')
+#     def download_file(self, filename):
+#         return send_from_directory("uploads", filename)
+
+#     def _format_file_path(self, context, model, name):
+#         path = getattr(model, name)
+#         filename = path.split("/")[-1]  # Extract filename
+#         audio_icon_url = url_for('static', filename="audio_icon.png")
+#         return f'<a href="{self.get_url(window='inline', id=model.id)}download/{filename}"><img src="{audio_icon_url}" alt="Download Icon"></a>'
+
 admin.add_view(ModelView(Song, db.session))
 
 # Configure basic authentication
@@ -58,7 +67,7 @@ configure_auth(app)
 # HELPERS
 def update_jazzle():
     """
-    Select a new jazzle for the day, or, if all songs in the database
+    Select a new jazzle  for the day, or, if all songs in the database
     have been selected, sends an email to the admin staff.
     """
     pass
@@ -111,8 +120,8 @@ if __name__ == "__main__":
             app=app,
             title=title,
             composer=composer,
-            performer=performer,
             form=form,
+            performer=performer,
             genre=genre,
             key=key,
             audio_path=audio_path,
