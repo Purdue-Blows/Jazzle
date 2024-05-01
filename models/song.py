@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Optional
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.types import LargeBinary
 from db import db
@@ -39,16 +40,30 @@ class Song(db.Model):
     genre = db.Column(db.String(100), nullable=False)
     key = db.Column(db.String(50), nullable=False)
     audio = db.Column(db.LargeBinary, nullable=False)
-    c_sheet_music = db.Column(db.LargeBinary, nullable=False)
-    bb_sheet_music = db.Column(db.LargeBinary)
-    eb_sheet_music = db.Column(db.LargeBinary)
-    bass_sheet_music = db.Column(db.LargeBinary, nullable=False)
+    c_sheet_music_path = db.Column(db.String(200), nullable=False)
+    bb_sheet_music_path = db.Column(db.String(200))
+    eb_sheet_music_path = db.Column(db.String(200))
+    bass_sheet_music_path = db.Column(db.String(200), nullable=False)
     selected = db.Column(db.Boolean, default=False, nullable=False)
 
-    def __init__(self, title, composer, form, performer, genre, key, audio_clip):
+    def __init__(
+        self,
+        app: Flask,
+        title,
+        composer,
+        form,
+        performer,
+        genre,
+        key,
+        audio_path,
+        c_sheet_music_path,
+        bb_sheet_music_path,
+        eb_sheet_music_path,
+        bass_sheet_music_path,
+    ):
         """
-        For creating new songs. If the song title is not unique,
-        a UniqueViolationError will be raised.
+        For creating new songs. If a unique or nullable constraint fails,
+        an IntegrityError will be raised.
         """
         self.title = title
         self.composer = composer
@@ -56,15 +71,20 @@ class Song(db.Model):
         self.performer = performer
         self.genre = genre
         self.key = key
-        self.audio_clip = audio_clip
-        with db.session() as session:
-            session.add(self)
-            session.commit()
+        self.audio_path = audio_path
+        self.c_sheet_music_path = c_sheet_music_path
+        self.bb_sheet_music_path = bb_sheet_music_path
+        self.eb_sheet_music_path = eb_sheet_music_path
+        self.bass_sheet_music_path = bass_sheet_music_path
+        with app.app_context():
+            with db.session() as session:
+                session.add(self)
+                session.commit()
 
     def write(self):
         """
-        For writing a song to the database. If the song title is not unique,
-        a UniqueViolationError will be raised.
+        For writing a song to the database. If a unique or nullable constraint fails,
+        an IntegrityError will be raised.
         """
         with db.session() as session:
             session.add(self)
@@ -72,7 +92,8 @@ class Song(db.Model):
 
     def update(self):
         """
-        For updating a song in the database
+        For updating a song in the database. If a unique or nullable constraint fails,
+        an IntegrityError will be raised.
         """
         with db.session() as session:
             session.commit()
