@@ -1,0 +1,22 @@
+{% extends "index.html" %}
+
+{% block body %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class="alert alert-danger" role="alert">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    <form class="center" action="{{ url_for('admin_login') }}" method="POST">
+        <label for="email">Email:</label>
+        <input type="text" id="email" name="email" required><br><br>
+        
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br><br>
+        
+        <input type="submit" value="Login">
+    </form>
+{% endblock %}
