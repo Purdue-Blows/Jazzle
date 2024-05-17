@@ -1,0 +1,10 @@
+<div class="rounded overflow-hidden shadow-md">
+  <!-- Only the desired sheet music is shown, but there is text notating the parts included -->
+  <embed
+    src="{{ url_for('showcase.download', title={{filename}}) }}"
+    alt="The sheet music for the song"
+  />
+  <h1 class="font-extrabold text-lg text-center">{{title}}</h1>
+  {% partsString = part + ", " for part in {{parts}} %}
+  <h2 class="text-sm text-center">Parts for {{partsString[0:-2]}}</h2>
+</div>

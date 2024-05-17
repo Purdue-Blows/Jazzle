@@ -1,22 +1,39 @@
-{% extends "index.html" %}
-
-{% block body %}
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <ul class="alert alert-danger" role="alert">
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
-    <form class="center" action="{{ url_for('admin_login') }}" method="POST">
-        <label for="email">Email:</label>
-        <input type="text" id="email" name="email" required><br><br>
-        
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br><br>
-        
-        <input type="submit" value="Login">
-    </form>
+{% extends "base.html" %} {% block body %} {% with messages =
+get_flashed_messages() %} {% if messages %}
+<ul class="alert alert-danger" role="alert">
+  {% for message in messages %}
+  <li>{{ message }}</li>
+  {% endfor %}
+</ul>
+{% endif %} {% endwith %}
+<div class="flex flex-col h-screen justify-center items-center">
+  <form action="{{ url_for('admin_login') }}" method="POST">
+    <div class="grid grid-cols-3 gap-5">
+      <label for="email">Email:</label>
+      <input
+        class="border-2 col-span-2"
+        type="text"
+        id="email"
+        name="email"
+        required
+      />
+      <label for="password">Password:</label>
+      <input
+        class="border-2 col-span-2"
+        type="password"
+        id="password"
+        name="password"
+        required
+      />
+    </div>
+    <div class="flex flex-row justify-center p-5">
+      <button
+        class="bg-slate-200 rounded-full font-extrabold p-1"
+        type="submit"
+      >
+        Login
+      </button>
+    </div>
+  </form>
+</div>
 {% endblock %}

@@ -1,11 +1,20 @@
 from enum import Enum
 from typing import Optional
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import CheckConstraint
-from sqlalchemy.types import LargeBinary
-from constants import Keys
-from db import db
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import CheckConstraint, Integer
+from constants import (
+    AUDIO_FILE_PATH,
+    BASS_MUSIC_FILE_PATH,
+    BB_MUSIC_FILE_PATH,
+    C_MUSIC_FILE_PATH,
+    EB_MUSIC_FILE_PATH,
+    Keys,
+    TimeSignatures,
+)
+from services.db import db
+from models.artists import Artist
+from models.form import Form
 from models.genre import Genre
 
 # POST ASKING ABOUT API
@@ -56,14 +65,18 @@ class Song(db.Model):
     CheckConstraint("performer", "performer IS TRUE OR artists.performer IS TRUE"),
     genre = db.Column(db.ForeignKey("genres.name"), nullable=False)
     key = db.Column(db.Enum(Keys), nullable=False)
+    time_signature = db.Column(db.Enum(TimeSignatures), nullable=False)
     # Note that all of the files are stored on the server
     # The db just contains paths to them so they can be retrieved
     audio = db.Column(db.String(200), nullable=False)
+    audio_clip = db.Column(db.String(200), nullable=False, default="")
     c_sheet_music = db.Column(db.String(200), nullable=False)
     bb_sheet_music = db.Column(db.String(200))
     eb_sheet_music = db.Column(db.String(200))
     bass_sheet_music = db.Column(db.String(200), nullable=False)
     selected = db.Column(db.Boolean, default=False, nullable=False)
+    current = db.Column(db.Boolean, default=False, nullable=False)
+    CheckConstraint("current", "SUM(TRUE) = 1"),
 
     def __init__(
         self,
@@ -74,11 +87,14 @@ class Song(db.Model):
         performer,
         genre,
         key,
+        time_signature,
         audio,
         c_sheet_music,
         bb_sheet_music,
         eb_sheet_music,
         bass_sheet_music,
+        selected=False,
+        current=False,
         update=True,
     ):
         """
@@ -91,11 +107,15 @@ class Song(db.Model):
         self.performer = performer
         self.genre = genre
         self.key = key
+        self.time_signature = time_signature
         self.audio = audio
+        self.audio_clip = audio.replace(".mp3", "") + "_clip.mp3"
         self.c_sheet_music = c_sheet_music
         self.bb_sheet_music = bb_sheet_music
         self.eb_sheet_music = eb_sheet_music
         self.bass_sheet_music = bass_sheet_music
+        self.selected = selected
+        self.current = current
         if update:
             with app.app_context():
                 with db.session() as session:
@@ -148,6 +168,45 @@ class Song(db.Model):
         if selected:
             query = query.filter(Song.selected == selected)
         return query.all()
+
+    @staticmethod
+    def add_default(app):
+        try:
+            title = "Ornithology"
+            # Update is true (for if these haven't already been added)
+            artist = Artist(
+                app, name="Charlie Parker", composer=True, performer=True, update=False
+            )
+            form = Form(app, name="ABAC", update=False)
+            genre = Genre(app, name="Bebop", update=False)
+            key = Keys.g
+            time_signature = TimeSignatures.FOUR_FOUR
+            audio_path = AUDIO_FILE_PATH + "ornithology.mp3"
+            # audio_clip_path = AUDIO_FILE_PATH + "ornithology_clip.mp3"
+            c_sheet_music_path = C_MUSIC_FILE_PATH + "ornithology_c.pdf"
+            bb_sheet_music_path = BB_MUSIC_FILE_PATH + "ornithology_bb.pdf"
+            eb_sheet_music_path = EB_MUSIC_FILE_PATH + "ornithology_eb.pdf"
+            bass_sheet_music_path = BASS_MUSIC_FILE_PATH + "ornithology_bass.pdf"
+
+            # Write ornithology to db
+            ornithology = Song(
+                app=app,
+                title=title,
+                composer=artist.name,
+                form=form.name,
+                performer=artist.name,
+                genre=genre.name,
+                key=key,
+                time_signature=time_signature,
+                audio=audio_path,
+                c_sheet_music=c_sheet_music_path,
+                bb_sheet_music=bb_sheet_music_path,
+                eb_sheet_music=eb_sheet_music_path,
+                bass_sheet_music=bass_sheet_music_path,
+                current=True,
+            )
+        except IntegrityError as e:
+            print(e)
 
     def __str__(self):
         return f"<Song: {self.title} - composer: {self.composer} - form: {self.form} - performer: {self.performer} - genre: {self.genre} - key: {self.key} - audio_clip: {self.audio_clip}>"

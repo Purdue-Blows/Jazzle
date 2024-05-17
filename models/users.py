@@ -1,7 +1,8 @@
 from flask import Flask
-from db import db
+from services.db import db
 from flask_login import UserMixin
 from constants import Roles
+from datetime import datetime
 
 
 class User(db.Model, UserMixin):
@@ -10,7 +11,7 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))
-    confirmed_at = db.Column(db.DateTime())
+    confirmed_at = db.Column(db.DateTime(), default=datetime.now())
     # Active discusses user activity; can be used for soft-deletion
     active = db.Column(db.Boolean())
     role = db.Column(db.Enum(Roles), nullable=False)

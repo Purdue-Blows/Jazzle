@@ -4,7 +4,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import CheckConstraint
 from sqlalchemy.types import LargeBinary, Text
-from db import db
+from services.db import db
 
 
 class Artist(db.Model):

@@ -1,0 +1,22 @@
+<!-- Update button so next element gets replaced appropriately -->
+<button
+  id="submitter"
+  class="btn"
+  type="submit"
+  hx-swap-oob="true"
+  hx-post="/guess"
+  hx-target="#guess_{{guesses - 1}}"
+>
+  <i class="fa-solid fa-arrow-right"></i>
+</button>
+<div id="guess_counter" class="flex flex-row" hx-swap-oob="true">
+  {% for guess in range(guesses) %}
+  <img
+    src="static/images/note.png"
+    alt="A musical note"
+    height="30xl"
+    width="30xl"
+  />
+  {% endfor %}
+</div>
+<h2 id="form">Form: {{form}}</h2>

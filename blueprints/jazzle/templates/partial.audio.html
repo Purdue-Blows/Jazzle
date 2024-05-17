@@ -1,0 +1,25 @@
+<!-- Update button so next element gets replaced appropriately -->
+<button
+  id="submitter"
+  class="btn"
+  type="submit"
+  hx-swap-oob="true"
+  hx-post="/guess"
+  hx-target="#solution"
+>
+  <i class="fa-solid fa-arrow-right"></i>
+</button>
+<!-- Update guess counter -->
+<div id="guess_counter" class="flex flex-row" hx-swap-oob="true">
+  {% for guess in range(guesses) %}
+  <img
+    src="static/images/note.png"
+    alt="A musical note"
+    height="30xl"
+    width="30xl"
+  />
+  {% endfor %}
+</div>
+<audio controls id="guess_1" hx-swap-oob="true">
+  <source src="jazzle_data/static/audio/{{audio_clip}}" type="audio/mpeg" />
+</audio>
