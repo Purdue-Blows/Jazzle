@@ -367,6 +367,9 @@ class SongView(UserView):
             # Open the audio file with pydub
             audio = AudioSegment.from_mp3(audio_file)
 
+            # Export the audio file before trimming
+            audio.export(os.path.join(AUDIO_FILE_PATH, audio_file.filename))
+
             # Extract the first 10 seconds (10000 milliseconds)
             trimmed_audio = audio[:10000]
 
@@ -378,8 +381,6 @@ class SongView(UserView):
             audio_clip_path = os.path.join(AUDIO_FILE_PATH, unique_filename)
             trimmed_audio.export(audio_clip_path)
 
-            # Save the files to the desired directories
-            audio_file.save(os.path.join(AUDIO_FILE_PATH, audio_file.filename))
             form.c_sheet_music.data.save(
                 os.path.join(C_MUSIC_FILE_PATH, form.c_sheet_music.data.filename)
             )

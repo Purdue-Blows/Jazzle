@@ -1,14 +1,14 @@
 <!-- Update button so next element gets replaced appropriately -->
-<button
-  id="submitter"
-  class="btn"
-  type="submit"
-  hx-swap-oob="true"
-  hx-post="/guess"
-  hx-target="#solution"
->
-  <i class="fa-solid fa-arrow-right"></i>
-</button>
+<form id="guess_form" hx-swap-oob="true" action="/guess" method="post">
+  <input
+    class="mx-auto outline text-center"
+    placeholder="Guess your song here!"
+    name="song"
+  />
+  <button id="submitter" class="btn" type="submit">
+    <i class="fa-solid fa-arrow-right"></i>
+  </button>
+</form>
 <!-- Update guess counter -->
 <div id="guess_counter" class="flex flex-row" hx-swap-oob="true">
   {% for guess in range(guesses) %}

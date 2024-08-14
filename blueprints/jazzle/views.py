@@ -3,7 +3,7 @@ from mailbox import Message
 import os
 import zipfile
 from flask import Blueprint, abort, flash, render_template, request, send_file, session
-from constants import MAX_GUESSES, Roles
+from constants import MAX_GUESSES, Roles, BASE_FILE_PATH
 from models.users import User
 from services.htmx import htmx
 from services.mail import mail
@@ -13,6 +13,7 @@ from sqlalchemy.sql.expression import func
 from services.scheduler import scheduler
 from jinja2_fragments import render_block
 from flask_htmx import make_response
+import PyPDF2
 
 bp = Blueprint("jazzle", __name__, template_folder="templates")
 
@@ -93,8 +94,6 @@ def home():
     #     abort(404)
     # song = ornithology
     session["guesses"] = MAX_GUESSES
-    print("GUESSES")
-    print(session.get("guesses", None))
     if session.get("guesses", None) == None:
         session["guesses"] = MAX_GUESSES
         guesses = session["guesses"]
@@ -133,31 +132,54 @@ def update_guess_count():
 #     return render_template("jazzle.html", guesses=session["guesses"])
 
 
-# TODO: I want to do the HTMX approach, but I think that's better suited for tomorrow
 @bp.route("/guess", methods=["POST"])
 def guess():
     session["guesses"] -= 1
     song_guess = request.form.get("song")
     song = db.session.query(Song).filter(Song.current == True).first()
-    if song_guess.lower() == song.title.lower() or session["guesses"] == 0:
+    if song_guess.lower() == song.title.lower() or session["guesses"] <= 0:
         session["guesses"] = 0
-        # If the guess is correct or the user is out of guesses
-        # have a popup where you can scroll through the music and the audio start playing below
-        sheet_music = ""
-        if song.bb_sheet_music:
-            sheet_music += f'<div class="carousel-item">Bb Sheet Music: <img src="{song.bb_sheet_music}" alt="Bb Sheet Music"></div>'
-        if song.eb_sheet_music:
-            sheet_music += f'<div class="carousel-item">Eb Sheet Music: <img src="{song.eb_sheet_music}" alt="Eb Sheet Music"></div>'
+
+        # Combine PDFs
+        pdf_files = []
         if song.c_sheet_music:
-            sheet_music += f'<div class="carousel-item">C Sheet Music: <img src="{song.c_sheet_music}" alt="C Sheet Music"></div>'
+            print(song.c_sheet_music)
+            pdf_files.append(
+                os.path.join(
+                    BASE_FILE_PATH,
+                    f"c_sheet_music/{song.c_sheet_music}",
+                )
+            )
+        if song.bb_sheet_music:
+            pdf_files.append(
+                os.path.join(BASE_FILE_PATH, f"bb_sheet_music/{song.bb_sheet_music}")
+            )
+        if song.eb_sheet_music:
+            pdf_files.append(
+                os.path.join(BASE_FILE_PATH, f"eb_sheet_music/{song.eb_sheet_music}")
+            )
         if song.bass_sheet_music:
-            sheet_music += f'<div class="carousel-item">Bass Sheet Music: <img src="{song.bass_sheet_music}" alt="Bass Sheet Music"></div>'
+            pdf_files.append(
+                os.path.join(
+                    BASE_FILE_PATH, f"bass_sheet_music/{song.bass_sheet_music}"
+                )
+            )
+
+        merger = PyPDF2.PdfMerger()
+        for pdf_file in pdf_files:
+            merger.append(pdf_file)
+
+        if not os.path.exists(os.path.join(BASE_FILE_PATH, "tmp")):
+            os.makedirs(os.path.join(BASE_FILE_PATH, "tmp"))
+
+        merger.write(os.path.join(BASE_FILE_PATH, "tmp", f"{song.title}.pdf"))
+        merger.close()
 
         return render_template(
-            "partial.solution.html",
-            sheet_music=sheet_music,
+            "song.html",
+            title=song.title,
+            sheet_music=f"jazzle_data/static/tmp/{song.title}.pdf",
             audio=song.audio,
-            guesses=session["guesses"],
         )
     else:
         # Return the updated html to swap
