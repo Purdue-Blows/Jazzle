@@ -6,13 +6,18 @@ from flask import flash, request, send_file
 from models.song import Song
 
 bp = Blueprint(
-    "showcase", __name__, url_prefix="/showcase", template_folder="templates"
+    "showcase",
+    __name__,
+    url_prefix="/showcase",
+    template_folder="templates",
 )
 
 
 @bp.route("/", methods=["GET"])
 def showcase():
-    return render_template("showcase.html")
+    songs = Song.query.all()
+    print(songs)
+    return render_template("showcase.html", songs=songs)
 
 
 @bp.route("/download", methods=["GET"])
@@ -21,7 +26,7 @@ def download():
 
     # The download logic is the same, except you need to append any filter params appropriately
     # Retrieve the song with the given id from the database
-    song = Song.query.where(Song.title == title).first()
+    song = Song.query.where(Song.title == title.lower()).first()
     if song is None:
         return flash("Sorry, we couldn't find that song!")
 

@@ -3,7 +3,7 @@ from mailbox import Message
 import os
 import zipfile
 from flask import Blueprint, abort, flash, render_template, request, send_file, session
-from constants import MAX_GUESSES, Roles, BASE_FILE_PATH
+from constants import MAX_GUESSES, Roles, JAZZLE_STATIC_FILE_PATH
 from models.users import User
 from services.htmx import htmx
 from services.mail import mail
@@ -21,67 +21,67 @@ bp = Blueprint("jazzle", __name__, template_folder="templates")
 # Cron triggers run at specific times
 # This is commented out for development purposes; it can be uncommented when development is further along
 # @scheduler.task("cron", id="update_jazzle", day="*", hour="0", minute="0")
-# def update_jazzle():
-#     """
-#     Select a new jazzle  for the day, or, if all songs in the database
-#     have been selected, sends an email to the admin staff.
-#     """
-#     # Update the jazzle for the day
-#     with scheduler.app.app_context():
-#         old_song = db.session.query(Song).filter(Song.current == True).first()
-#         if old_song:
-#             old_song.current = False
-#             db.session.commit()
+def update_jazzle():
+    """
+    Select a new jazzle  for the day, or, if all songs in the database
+    have been selected, sends an email to the admin staff.
+    """
+    # Update the jazzle for the day
+    # with scheduler.app.app_context():
+    old_song = db.session.query(Song).filter(Song.current == True).first()
+    if old_song:
+        old_song.current = False
+        db.session.commit()
 
-#         # Select a random song that is not currently selected
-#         new_song = (
-#             db.session.query(Song)
-#             .filter(Song.selected == False)
-#             .order_by(func.random())
-#             .first()
-#         )
+    # Select a random song that is not currently selected
+    new_song = (
+        db.session.query(Song)
+        .filter(Song.selected == False)
+        .order_by(func.random())
+        .first()
+    )
 
-#         # Update the selected and current flags for the chosen song
-#         if new_song:
-#             new_song.selected = True
-#             new_song.current = True
-#             db.session.commit()
-#             num_not_selected = len(
-#                 db.session.query(Song).filter(Song.selected == False).all()
-#             )
-#             match num_not_selected:
-#                 # Send an email to the admin staff if all songs have been selected
-#                 case 0:
-#                     msg = Message(
-#                         "All jazz songs in the database have been selected; make sure to add more songs to the database!",
-#                         recipients=[
-#                             email for email in db.session.query(User.email).all()
-#                         ],
-#                     )
-#                     msg.subject = "Only one day to add more jazz songs to the database!"
-#                     mail.send(msg)
-#                 case 7:
-#                     msg = Message(
-#                         "All jazz songs in the database have been selected; make sure to add more songs to the database!",
-#                         recipients=[
-#                             email for email in db.session.query(User.email).all()
-#                         ],
-#                     )
-#                     msg.subject = (
-#                         "Only one week to add more jazz songs to the database!"
-#                     )
-#                     mail.send(msg)
-#         else:
-#             # Send an email to the admin staff if all songs have been selected
-#             msg = Message(
-#                 "All jazz songs in the database have been selected; make sure to add more songs to the database!",
-#                 recipients=[email for email in db.session.query(User.email).all()],
-#             )
-#             msg.subject = "Could not select new song; NEED TO ADD MORE JAZZ SONGS TO THE DATABASE!"
-#             mail.send(msg)
+    # Update the selected and current flags for the chosen song
+    if new_song:
+        new_song.selected = True
+        new_song.current = True
+        db.session.commit()
+        # num_not_selected = len(
+        #     db.session.query(Song).filter(Song.selected == False).all()
+        # )
+        # match num_not_selected:
+        #     # Send an email to the admin staff if all songs have been selected
+        #     case 0:
+        #         msg = Message(
+        #             "All jazz songs in the database have been selected; make sure to add more songs to the database!",
+        #             recipients=[
+        #                 email for email in db.session.query(User.email).all()
+        #             ],
+        #         )
+        #         msg.subject = "Only one day to add more jazz songs to the database!"
+        #         mail.send(msg)
+        #     case 7:
+        #         msg = Message(
+        #             "All jazz songs in the database have been selected; make sure to add more songs to the database!",
+        #             recipients=[
+        #                 email for email in db.session.query(User.email).all()
+        #             ],
+        #         )
+        #         msg.subject = (
+        #             "Only one week to add more jazz songs to the database!"
+        #         )
+        #         mail.send(msg)
+        # else:
+        #     # Send an email to the admin staff if all songs have been selected
+        #     msg = Message(
+        #         "All jazz songs in the database have been selected; make sure to add more songs to the database!",
+        #         recipients=[email for email in db.session.query(User.email).all()],
+        #     )
+        #     msg.subject = "Could not select new song; NEED TO ADD MORE JAZZ SONGS TO THE DATABASE!"
+        #     mail.send(msg)
 
-#     # Reset user guesses
-#     session["guesses"] = MAX_GUESSES
+    # Reset user guesses
+    session["guesses"] = MAX_GUESSES
 
 
 # ROUTES
@@ -93,7 +93,6 @@ def home():
     # if not song:
     #     abort(404)
     # song = ornithology
-    session["guesses"] = MAX_GUESSES
     if session.get("guesses", None) == None:
         session["guesses"] = MAX_GUESSES
         guesses = session["guesses"]
@@ -102,6 +101,16 @@ def home():
 
     # if session.get("pitch", None) == None:
     #     session["pitch"] = "c"
+
+    if session["guesses"] == 0:
+        song = db.session.query(Song).filter(Song.current == True).first()
+        return render_template(
+            "song.html",
+            title=song.title,
+            poster=song.poster,
+            audio=song.audio,
+            id=song.id,
+        )
 
     return render_template(
         "jazzle.html",
@@ -141,46 +150,50 @@ def guess():
         session["guesses"] = 0
 
         # Combine PDFs
-        pdf_files = []
-        if song.c_sheet_music:
-            print(song.c_sheet_music)
-            pdf_files.append(
-                os.path.join(
-                    BASE_FILE_PATH,
-                    f"c_sheet_music/{song.c_sheet_music}",
-                )
-            )
-        if song.bb_sheet_music:
-            pdf_files.append(
-                os.path.join(BASE_FILE_PATH, f"bb_sheet_music/{song.bb_sheet_music}")
-            )
-        if song.eb_sheet_music:
-            pdf_files.append(
-                os.path.join(BASE_FILE_PATH, f"eb_sheet_music/{song.eb_sheet_music}")
-            )
-        if song.bass_sheet_music:
-            pdf_files.append(
-                os.path.join(
-                    BASE_FILE_PATH, f"bass_sheet_music/{song.bass_sheet_music}"
-                )
-            )
+        # pdf_files = []
+        # if song.c_sheet_music:
+        #     print(song.c_sheet_music)
+        #     pdf_files.append(
+        #         os.path.join(
+        #             BASE_FILE_PATH,
+        #             f"c_sheet_music/{song.c_sheet_music}",
+        #         )
+        #     )
+        # if song.bb_sheet_music:
+        #     pdf_files.append(
+        #         os.path.join(BASE_FILE_PATH, f"bb_sheet_music/{song.bb_sheet_music}")
+        #     )
+        # if song.eb_sheet_music:
+        #     pdf_files.append(
+        #         os.path.join(BASE_FILE_PATH, f"eb_sheet_music/{song.eb_sheet_music}")
+        #     )
+        # if song.bass_sheet_music:
+        #     pdf_files.append(
+        #         os.path.join(
+        #             BASE_FILE_PATH, f"bass_sheet_music/{song.bass_sheet_music}"
+        #         )
+        #     )
 
-        merger = PyPDF2.PdfMerger()
-        for pdf_file in pdf_files:
-            merger.append(pdf_file)
+        # merger = PyPDF2.PdfMerger()
+        # for pdf_file in pdf_files:
+        #     merger.append(pdf_file)
 
-        if not os.path.exists(os.path.join(BASE_FILE_PATH, "tmp")):
-            os.makedirs(os.path.join(BASE_FILE_PATH, "tmp"))
+        # if not os.path.exists(os.path.join(BASE_FILE_PATH, "tmp")):
+        #     os.makedirs(os.path.join(BASE_FILE_PATH, "tmp"))
 
-        merger.write(os.path.join(BASE_FILE_PATH, "tmp", f"{song.title}.pdf"))
-        merger.close()
+        # merger.write(os.path.join(BASE_FILE_PATH, "tmp", f"{song.title}.pdf"))
+        # merger.close()
 
-        return render_template(
-            "song.html",
-            title=song.title,
-            sheet_music=f"jazzle_data/static/tmp/{song.title}.pdf",
-            audio=song.audio,
-        )
+        return (
+            render_template(
+                "song.html",
+                title=song.title,
+                poster=song.poster,
+                audio=song.audio,
+                id=song.id,
+            ),
+            202,
+        )  # Returning a 202 status code to indicate that the answer is correct
     else:
         # Return the updated html to swap
         match session["guesses"]:

@@ -9,6 +9,7 @@ from constants import (
     BB_MUSIC_FILE_PATH,
     C_MUSIC_FILE_PATH,
     EB_MUSIC_FILE_PATH,
+    POSTER_FILE_PATH,
     Keys,
     TimeSignatures,
 )
@@ -74,6 +75,7 @@ class Song(db.Model):
     bb_sheet_music = db.Column(db.String(200))
     eb_sheet_music = db.Column(db.String(200))
     bass_sheet_music = db.Column(db.String(200), nullable=False)
+    poster = db.Column(db.String(200), nullable=False)
     selected = db.Column(db.Boolean, default=False, nullable=False)
     current = db.Column(db.Boolean, default=False, nullable=False)
     CheckConstraint("current", "SUM(TRUE) = 1"),
@@ -93,6 +95,7 @@ class Song(db.Model):
         bb_sheet_music,
         eb_sheet_music,
         bass_sheet_music,
+        poster,
         selected=False,
         current=False,
         update=True,
@@ -114,6 +117,7 @@ class Song(db.Model):
         self.bb_sheet_music = bb_sheet_music
         self.eb_sheet_music = eb_sheet_music
         self.bass_sheet_music = bass_sheet_music
+        self.poster = poster
         self.selected = selected
         self.current = current
         if update:
@@ -187,6 +191,7 @@ class Song(db.Model):
             bb_sheet_music_path = BB_MUSIC_FILE_PATH + "ornithology_bb.pdf"
             eb_sheet_music_path = EB_MUSIC_FILE_PATH + "ornithology_eb.pdf"
             bass_sheet_music_path = BASS_MUSIC_FILE_PATH + "ornithology_bass.pdf"
+            poster = POSTER_FILE_PATH + "ornithology.png"
 
             # Write ornithology to db
             ornithology = Song(
@@ -203,6 +208,7 @@ class Song(db.Model):
                 bb_sheet_music=bb_sheet_music_path,
                 eb_sheet_music=eb_sheet_music_path,
                 bass_sheet_music=bass_sheet_music_path,
+                poster=poster,
                 current=True,
             )
         except IntegrityError as e:

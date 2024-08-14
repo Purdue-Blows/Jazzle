@@ -18,11 +18,12 @@ from blueprints.showcase.views import bp as showcase_bp
 from blueprints.jazzle_data.views import bp as jazzle_data_bp
 from constants import (
     AUDIO_FILE_PATH,
-    BASE_FILE_PATH,
+    JAZZLE_STATIC_FILE_PATH,
     BASS_MUSIC_FILE_PATH,
     BB_MUSIC_FILE_PATH,
     C_MUSIC_FILE_PATH,
     EB_MUSIC_FILE_PATH,
+    POSTER_FILE_PATH,
     Keys,
     Roles,
     TimeSignatures,
@@ -53,7 +54,7 @@ from flask import (
     send_file,
     url_for,
 )
-from wtforms import SelectField, ValidationError
+from wtforms import BooleanField, SelectField, ValidationError
 from services.db import db
 from constants import (
     AUDIO_FILE_PATH,
@@ -279,18 +280,23 @@ class SongView(UserView):
         # Download a zip of the files for the row given the paths
         zip_path = f"/tmp/{song.title}.zip"
         with zipfile.ZipFile(zip_path, "w") as zip_file:
-            zip_file.write(song.audio, os.path.basename(song.audio))
-            zip_file.write(song.c_sheet_music, os.path.basename(song.c_sheet_music))
+            zip_file.write(f"blueprints/{song.audio}", os.path.basename(song.audio))
+            zip_file.write(
+                f"blueprints/{song.c_sheet_music}", os.path.basename(song.c_sheet_music)
+            )
             if song.bb_sheet_music:
                 zip_file.write(
-                    song.bb_sheet_music, os.path.basename(song.bb_sheet_music)
+                    f"blueprints/{song.bb_sheet_music}",
+                    os.path.basename(song.bb_sheet_music),
                 )
             if song.eb_sheet_music:
                 zip_file.write(
-                    song.eb_sheet_music, os.path.basename(song.eb_sheet_music)
+                    f"blueprints/{song.eb_sheet_music}",
+                    os.path.basename(song.eb_sheet_music),
                 )
             zip_file.write(
-                song.bass_sheet_music, os.path.basename(song.bass_sheet_music)
+                f"blueprints/{song.bass_sheet_music}",
+                os.path.basename(song.bass_sheet_music),
             )
         return send_file(zip_path, as_attachment=True)
 
@@ -326,6 +332,7 @@ class SongView(UserView):
         bb_sheet_music=lambda v, c, m, n: "✅" if m.bb_sheet_music else "❌",
         eb_sheet_music=lambda v, c, m, n: "✅" if m.eb_sheet_music else "❌",
         bass_sheet_music=lambda v, c, m, n: "✅" if m.bass_sheet_music else "❌",
+        poster=lambda v, c, m, n: "✅" if m.poster else "❌",
     )
 
     # Note: as far as I could tell, images can't be easily rendered using the below method
@@ -346,6 +353,7 @@ class SongView(UserView):
         "bb_sheet_music",
         "eb_sheet_music",
         "bass_sheet_music",
+        "poster",
     ]
 
     # def validate_file(form, field):
@@ -382,16 +390,27 @@ class SongView(UserView):
             trimmed_audio.export(audio_clip_path)
 
             form.c_sheet_music.data.save(
-                os.path.join(C_MUSIC_FILE_PATH, form.c_sheet_music.data.filename)
+                os.path.join(
+                    C_MUSIC_FILE_PATH, form.c_sheet_music.data.filename.lower()
+                )
             )
             form.bb_sheet_music.data.save(
-                os.path.join(BB_MUSIC_FILE_PATH, form.bb_sheet_music.data.filename)
+                os.path.join(
+                    BB_MUSIC_FILE_PATH, form.bb_sheet_music.data.filename.lower()
+                )
             )
             form.eb_sheet_music.data.save(
-                os.path.join(EB_MUSIC_FILE_PATH, form.eb_sheet_music.data.filename)
+                os.path.join(
+                    EB_MUSIC_FILE_PATH, form.eb_sheet_music.data.filename.lower()
+                )
             )
             form.bass_sheet_music.data.save(
-                os.path.join(BASS_MUSIC_FILE_PATH, form.bass_sheet_music.data.filename)
+                os.path.join(
+                    BASS_MUSIC_FILE_PATH, form.bass_sheet_music.data.filename.lower()
+                )
+            )
+            form.poster.data.save(
+                os.path.join(POSTER_FILE_PATH, form.poster.data.filename.lower())
             )
 
             # Create the database instance
@@ -403,10 +422,13 @@ class SongView(UserView):
             key = form.key.data
             time_signature = form.time_signature.data
             audio_path = form.audio.data.filename
-            c_sheet_music_path = form.c_sheet_music.data.filename
-            bb_sheet_music_path = form.bb_sheet_music.data.filename
-            eb_sheet_music_path = form.eb_sheet_music.data.filename
-            bass_sheet_music_path = form.bass_sheet_music.data.filename
+            c_sheet_music_path = form.c_sheet_music.data.filename.lower()
+            bb_sheet_music_path = form.bb_sheet_music.data.filename.lower()
+            eb_sheet_music_path = form.eb_sheet_music.data.filename.lower()
+            bass_sheet_music_path = form.bass_sheet_music.data.filename.lower()
+            poster_path = form.poster.data.filename.lower()
+            selected = form.selected.data
+            current = form.current.data
 
             # Write ornithology to db
             song = Song(
@@ -423,7 +445,9 @@ class SongView(UserView):
                 bb_sheet_music=bb_sheet_music_path,
                 eb_sheet_music=eb_sheet_music_path,
                 bass_sheet_music=bass_sheet_music_path,
-                current=True,
+                poster=poster_path,
+                selected=selected,
+                current=current,
             )
             return song
 
@@ -488,6 +512,13 @@ class SongView(UserView):
             allowed_extensions=["pdf"],
             # validators=[validate_file],
         ),
+        "poster": FileUploadField(
+            "Poster",
+            base_path=POSTER_FILE_PATH,
+            allowed_extensions=["png", "jpg", "jpeg"],
+        ),
+        "current": BooleanField(),
+        "selected": BooleanField(),
     }
 
     form_columns = {
@@ -504,6 +535,9 @@ class SongView(UserView):
         "bb_sheet_music",
         "eb_sheet_music",
         "bass_sheet_music",
+        "poster",
+        "current",
+        "selected",
     }
 
     form_rules = [
@@ -520,6 +554,9 @@ class SongView(UserView):
         "bb_sheet_music",
         "eb_sheet_music",
         "bass_sheet_music",
+        "poster",
+        "current",
+        "selected",
     ]
 
 

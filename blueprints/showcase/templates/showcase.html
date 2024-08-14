@@ -10,27 +10,64 @@
       hx-target="#results"
       placeholder="Find a standard!"
     />
-    <h2
+    <!-- <h2
       hx-get="/advanced_search"
       hx-target="#advanced_search"
       class="font-extrabold color-slate-200"
     >
       Advanced Search
-    </h2>
+    </h2> -->
   </div>
   <!-- The search results; posters with the song data returned by backend -->
-  <div id="results" class="grid grid-cols-5">
-    <div class="rounded overflow-hidden shadow-md">
-      <!-- Only the desired sheet music is shown, but there is text notating the parts included -->
-      <embed
-        src="{{ url_for('showcase.download', title='ornithology') }}"
-        alt="The sheet music for the song"
-      />
-      <h1 class="font-extrabold text-lg text-center">Ornithology</h1>
-      <h2 class="text-sm text-center">Parts for C, Bb, Eb, and Bass</h2>
+  <div id="results" class="grid grid-cols-4 gap-4 pad-4">
+    {% for song in songs %} {% if song.selected %}
+    <div class="bg-white p-4 shadow-md">
+      <h2 class="bg-slate-300 text-center text-lg font-bold">
+        {{ song.title }}
+      </h2>
+      <img src="/../{{song.poster}}" class="w-64 h-64" />
+      <div class="flex justify-center mt-4">
+        {% if song.c_sheet_music %}
+        <button
+          class="bg-slate-500 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded"
+        >
+          C Sheet Music
+        </button>
+        {% endif %} {% if song.bb_sheet_music %}
+        <button
+          class="bg-slate-500 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded ml-2"
+        >
+          Bb Sheet Music
+        </button>
+        {% endif %}
+      </div>
+      <div class="flex justify-center mt-4">
+        {% if song.eb_sheet_music %}
+        <button
+          class="bg-slate-500 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Eb Sheet Music
+        </button>
+        {% endif %} {% if song.bass_sheet_music %}
+        <button
+          class="bg-slate-500 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded ml-2"
+        >
+          Bass Sheet Music
+        </button>
+        {% endif %}
+      </div>
+      <div class="flex justify-center mt-4">
+        {% if song.audio %}
+        <button
+          class="bg-slate-500 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Audio
+        </button>
+        {% endif %}
+      </div>
     </div>
+
+    {% endif %} {% endfor %}
   </div>
-  <!-- Need pagination as well -->
-  <!-- Needs to be clickable so you can scroll through, listen to audio, and download -->
+  {% endblock %}
 </div>
-{% endblock %}

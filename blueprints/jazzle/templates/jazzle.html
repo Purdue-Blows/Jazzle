@@ -1,7 +1,7 @@
 {% extends 'base.html' %} {% block title %} Jazzle {% endblock %} {% block body
 %}
   <div id="main">
-    <div class="flex flex-row justify-between p-5">
+    <div hx-ext="response-targets" class="flex flex-row justify-between p-5">
       <div></div>
       <form id="guess_form">
         <input
@@ -14,10 +14,20 @@
           class="btn"
           type="submit"
           hx-post="/guess"
-          hx-target="#guess_{{guesses - 1}}"
+          hx-target-200="#guess_{{guesses - 1}}"
+          hx-target-202="#body"
         >
           <i class="fa-solid fa-arrow-right"></i>
         </button>
+        <!-- <script>
+          document.getElementById('submitter').addEventListener('submit', function(event) {
+            // Assuming you have a way to determine if the guess is correct
+            if (isCorrectGuess) {
+              event.preventDefault(); // Prevent default form submission
+              window.location.reload(); // Reload the entire page
+            }
+          });
+        </script> -->
       </form>
       <div class="ml-8"></div>
     </div>

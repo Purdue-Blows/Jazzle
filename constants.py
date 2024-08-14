@@ -7,12 +7,14 @@ import os
 
 CLIP_LENGTH = 10
 
-BASE_FILE_PATH = "blueprints/jazzle_data/static/"
-AUDIO_FILE_PATH = BASE_FILE_PATH + "audio/"
-C_MUSIC_FILE_PATH = BASE_FILE_PATH + "c_sheet_music/"
-BB_MUSIC_FILE_PATH = BASE_FILE_PATH + "bb_sheet_music/"
-EB_MUSIC_FILE_PATH = BASE_FILE_PATH + "eb_sheet_music/"
-BASS_MUSIC_FILE_PATH = BASE_FILE_PATH + "bass_sheet_music/"
+BASE_STATIC_FILE_PATH = "static/"
+JAZZLE_STATIC_FILE_PATH = "jazzle_data/static/"
+AUDIO_FILE_PATH = JAZZLE_STATIC_FILE_PATH + "audio/"
+C_MUSIC_FILE_PATH = JAZZLE_STATIC_FILE_PATH + "c_sheet_music/"
+BB_MUSIC_FILE_PATH = JAZZLE_STATIC_FILE_PATH + "bb_sheet_music/"
+EB_MUSIC_FILE_PATH = JAZZLE_STATIC_FILE_PATH + "eb_sheet_music/"
+BASS_MUSIC_FILE_PATH = JAZZLE_STATIC_FILE_PATH + "bass_sheet_music/"
+POSTER_FILE_PATH = JAZZLE_STATIC_FILE_PATH + "posters/"
 AUDIO_ICON = None
 MAX_GUESSES = 8
 with open(
