@@ -13,7 +13,6 @@ from sqlalchemy.sql.expression import func
 from services.scheduler import scheduler
 from jinja2_fragments import render_block
 from flask_htmx import make_response
-import PyPDF2
 
 bp = Blueprint("jazzle", __name__, template_folder="templates")
 
@@ -148,41 +147,6 @@ def guess():
     song = db.session.query(Song).filter(Song.current == True).first()
     if song_guess.lower() == song.title.lower() or session["guesses"] <= 0:
         session["guesses"] = 0
-
-        # Combine PDFs
-        # pdf_files = []
-        # if song.c_sheet_music:
-        #     print(song.c_sheet_music)
-        #     pdf_files.append(
-        #         os.path.join(
-        #             BASE_FILE_PATH,
-        #             f"c_sheet_music/{song.c_sheet_music}",
-        #         )
-        #     )
-        # if song.bb_sheet_music:
-        #     pdf_files.append(
-        #         os.path.join(BASE_FILE_PATH, f"bb_sheet_music/{song.bb_sheet_music}")
-        #     )
-        # if song.eb_sheet_music:
-        #     pdf_files.append(
-        #         os.path.join(BASE_FILE_PATH, f"eb_sheet_music/{song.eb_sheet_music}")
-        #     )
-        # if song.bass_sheet_music:
-        #     pdf_files.append(
-        #         os.path.join(
-        #             BASE_FILE_PATH, f"bass_sheet_music/{song.bass_sheet_music}"
-        #         )
-        #     )
-
-        # merger = PyPDF2.PdfMerger()
-        # for pdf_file in pdf_files:
-        #     merger.append(pdf_file)
-
-        # if not os.path.exists(os.path.join(BASE_FILE_PATH, "tmp")):
-        #     os.makedirs(os.path.join(BASE_FILE_PATH, "tmp"))
-
-        # merger.write(os.path.join(BASE_FILE_PATH, "tmp", f"{song.title}.pdf"))
-        # merger.close()
 
         return (
             render_template(
