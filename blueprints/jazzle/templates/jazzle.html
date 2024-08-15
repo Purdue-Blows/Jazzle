@@ -1,9 +1,9 @@
 {% extends 'base.html' %} {% block title %} Jazzle {% endblock %} {% block body
 %}
   <div id="main">
-    <div hx-ext="response-targets" class="flex flex-row justify-between p-5">
+    <div class="flex flex-row justify-between p-5">
       <div></div>
-      <form id="guess_form">
+      <form id="guess_form" action="/guess" method="post">
         <input
           class="mx-auto outline text-center"
           placeholder="Guess your song here!"
@@ -13,12 +13,11 @@
           id="submitter"
           class="btn"
           type="submit"
-          hx-post="/guess"
-          hx-target-200="#guess_{{guesses - 1}}"
-          hx-target-202="#body"
         >
           <i class="fa-solid fa-arrow-right"></i>
         </button>
+        <!-- hx-target-200="#guess_{{guesses - 1}}"
+          hx-target-202="#body" -->
         <!-- <script>
           document.getElementById('submitter').addEventListener('submit', function(event) {
             // Assuming you have a way to determine if the guess is correct
@@ -46,6 +45,7 @@
       </div>
       <div class="w-12"></div>
     </div>
+    <div class="h-6"></div>
     <div class="flex flex-row justify-around items-center">
       <div class="flex flex-col justify-center">
         {% block form %}
@@ -65,15 +65,28 @@
     <div class="flex flex-row justify-center">
       <!-- Note that all of the images have the extra margin for one extra sharp or flat, so they all align height-wise -->
       <!-- Load the clef -->
-      {% if instrument == "Bass" %}
-      <img src="static/images/bass.png" alt="Bass clef" height="20%" />
-      {% else %}
+      <!-- {% if instrument == "Bass" %} -->
+      <!-- <img src="static/images/bass.png" alt="Bass clef" height="20%" /> -->
+      <!-- {% else %} -->
       <img src="static/images/treble.png" alt="Treble clef" height="20%" />
+      <!-- {% endif %} -->
+      {% if guesses < 6 %}
+      <img
+        id="guess_5"
+        src="static/images/{{key}}_{{clef}}.png"
+        alt="A musical key"
+        height="20%"
+      />
       {% endif %}
-      <!-- Load the key; uses partial html instead of jinja -->
-      <div id="guess_5"></div>
       <!-- Load the time signature; uses partial html -->
-      <div id="guess_4"></div>
+      {% if guesses < 5 %}
+      <img
+        id="guess_4"
+        src="static/images/{{time_signature}}.png"
+        alt="A musical key"
+        height="20%"
+      />
+      {% endif %}
       <!-- The rest of the staff -->
       <img
         src="static/images/staff.png"
@@ -95,7 +108,11 @@
     </div>
     <div class="flex flex-row justify-between">
       <div class="ml-8"></div>
-      <div id="guess_1"></div>
+      {% if guesses < 2 %}
+      <audio controls id="guess_1" hx-swap-oob="true">
+        <source src="{{audio_clip}}" type="audio/mpeg" />
+      </audio>
+      {% endif %}
       <!-- <audio controls>
                     <source id="guess_1" src="{{audio}}" type="audio/mpeg" duration="{{duration}}">
                 </audio> -->

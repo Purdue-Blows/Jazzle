@@ -121,6 +121,7 @@ login_manager.init_app(app)
 
 # late initialization of scheduling
 scheduler.init_app(app)
+
 scheduler.start()
 
 # late initialization of mail

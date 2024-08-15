@@ -19,68 +19,68 @@ bp = Blueprint("jazzle", __name__, template_folder="templates")
 
 # Cron triggers run at specific times
 # This is commented out for development purposes; it can be uncommented when development is further along
-# @scheduler.task("cron", id="update_jazzle", day="*", hour="0", minute="0")
+@scheduler.task("cron", id="update_jazzle", day="*", hour="0", minute="0")
 def update_jazzle():
     """
     Select a new jazzle  for the day, or, if all songs in the database
     have been selected, sends an email to the admin staff.
     """
     # Update the jazzle for the day
-    # with scheduler.app.app_context():
-    old_song = db.session.query(Song).filter(Song.current == True).first()
-    if old_song:
-        old_song.current = False
-        db.session.commit()
+    with scheduler.app.app_context():
+        old_song = db.session.query(Song).filter(Song.current == True).first()
+        if old_song:
+            old_song.current = False
+            db.session.commit()
 
-    # Select a random song that is not currently selected
-    new_song = (
-        db.session.query(Song)
-        .filter(Song.selected == False)
-        .order_by(func.random())
-        .first()
-    )
+        # Select a random song that is not currently selected
+        new_song = (
+            db.session.query(Song)
+            .filter(Song.selected == False)
+            .order_by(func.random())
+            .first()
+        )
 
-    # Update the selected and current flags for the chosen song
-    if new_song:
-        new_song.selected = True
-        new_song.current = True
-        db.session.commit()
-        # num_not_selected = len(
-        #     db.session.query(Song).filter(Song.selected == False).all()
-        # )
-        # match num_not_selected:
-        #     # Send an email to the admin staff if all songs have been selected
-        #     case 0:
-        #         msg = Message(
-        #             "All jazz songs in the database have been selected; make sure to add more songs to the database!",
-        #             recipients=[
-        #                 email for email in db.session.query(User.email).all()
-        #             ],
-        #         )
-        #         msg.subject = "Only one day to add more jazz songs to the database!"
-        #         mail.send(msg)
-        #     case 7:
-        #         msg = Message(
-        #             "All jazz songs in the database have been selected; make sure to add more songs to the database!",
-        #             recipients=[
-        #                 email for email in db.session.query(User.email).all()
-        #             ],
-        #         )
-        #         msg.subject = (
-        #             "Only one week to add more jazz songs to the database!"
-        #         )
-        #         mail.send(msg)
-        # else:
-        #     # Send an email to the admin staff if all songs have been selected
-        #     msg = Message(
-        #         "All jazz songs in the database have been selected; make sure to add more songs to the database!",
-        #         recipients=[email for email in db.session.query(User.email).all()],
-        #     )
-        #     msg.subject = "Could not select new song; NEED TO ADD MORE JAZZ SONGS TO THE DATABASE!"
-        #     mail.send(msg)
+        # Update the selected and current flags for the chosen song
+        if new_song:
+            new_song.selected = True
+            new_song.current = True
+            db.session.commit()
+            # num_not_selected = len(
+            #     db.session.query(Song).filter(Song.selected == False).all()
+            # )
+            # match num_not_selected:
+            #     # Send an email to the admin staff if all songs have been selected
+            #     case 0:
+            #         msg = Message(
+            #             "All jazz songs in the database have been selected; make sure to add more songs to the database!",
+            #             recipients=[
+            #                 email for email in db.session.query(User.email).all()
+            #             ],
+            #         )
+            #         msg.subject = "Only one day to add more jazz songs to the database!"
+            #         mail.send(msg)
+            #     case 7:
+            #         msg = Message(
+            #             "All jazz songs in the database have been selected; make sure to add more songs to the database!",
+            #             recipients=[
+            #                 email for email in db.session.query(User.email).all()
+            #             ],
+            #         )
+            #         msg.subject = (
+            #             "Only one week to add more jazz songs to the database!"
+            #         )
+            #         mail.send(msg)
+            # else:
+            #     # Send an email to the admin staff if all songs have been selected
+            #     msg = Message(
+            #         "All jazz songs in the database have been selected; make sure to add more songs to the database!",
+            #         recipients=[email for email in db.session.query(User.email).all()],
+            #     )
+            #     msg.subject = "Could not select new song; NEED TO ADD MORE JAZZ SONGS TO THE DATABASE!"
+            #     mail.send(msg)
 
-    # Reset user guesses
-    session["guesses"] = MAX_GUESSES
+        # Reset user guesses
+        session["guesses"] = MAX_GUESSES
 
 
 # ROUTES
@@ -92,6 +92,9 @@ def home():
     # if not song:
     #     abort(404)
     # song = ornithology
+    # For debug
+    session["guesses"] = MAX_GUESSES
+    # Update
     if session.get("guesses", None) == None:
         session["guesses"] = MAX_GUESSES
         guesses = session["guesses"]
@@ -143,6 +146,7 @@ def update_guess_count():
 @bp.route("/guess", methods=["POST"])
 def guess():
     session["guesses"] -= 1
+    print(session["guesses"])
     song_guess = request.form.get("song")
     song = db.session.query(Song).filter(Song.current == True).first()
     if song_guess.lower() == song.title.lower() or session["guesses"] <= 0:
@@ -155,6 +159,7 @@ def guess():
                 poster=song.poster,
                 audio=song.audio,
                 id=song.id,
+                guesses=session["guesses"],
             ),
             202,
         )  # Returning a 202 status code to indicate that the answer is correct
@@ -166,14 +171,15 @@ def guess():
                 # Retrieve guess_7 and update it's text
                 # Retrieve the number of guesses and update them
                 return render_template(
-                    "partial.form.html",
+                    "jazzle.html",
                     form=song.form,
                     guesses=session["guesses"],
                 )
             case 6:
                 # Update the genre of the song
                 return render_template(
-                    "partial.genre.html",
+                    "jazzle.html",
+                    form=song.form,
                     genre=song.genre,
                     guesses=session["guesses"],
                 )
@@ -182,7 +188,9 @@ def guess():
                 # if session["pitch"] == "bass":
                 #     return f"""<img id="guess_5" src="static/images/{song.key}_bass.png" alt="A musical key" height="20%">"""
                 return render_template(
-                    "partial.key.html",
+                    "jazzle.html",
+                    form=song.form,
+                    genre=song.genre,
                     key=song.key.name,
                     clef="treble",
                     guesses=session["guesses"],
@@ -190,14 +198,23 @@ def guess():
             case 4:
                 # Update the time signature of the song
                 return render_template(
-                    "partial.time_signature.html",
+                    "jazzle.html",
+                    form=song.form,
+                    genre=song.genre,
+                    key=song.key.name,
+                    clef="treble",
                     time_signature=song.time_signature.name,
                     guesses=session["guesses"],
                 )
             case 3:
                 # Update the composer of the song
                 return render_template(
-                    "partial.composer.html",
+                    "jazzle.html",
+                    form=song.form,
+                    genre=song.genre,
+                    key=song.key.name,
+                    clef="treble",
+                    time_signature=song.time_signature.name,
                     composer=song.composer,
                     guesses=session["guesses"],
                 )
@@ -205,14 +222,27 @@ def guess():
             case 2:
                 # Update the performer of the song
                 return render_template(
-                    "partial.performer.html",
+                    "jazzle.html",
+                    form=song.form,
+                    genre=song.genre,
+                    key=song.key.name,
+                    clef="treble",
+                    time_signature=song.time_signature.name,
+                    composer=song.composer,
                     performer=song.performer,
                     guesses=session["guesses"],
                 )
             case 1:
                 # Update the audio clip of the song
                 return render_template(
-                    "partial.audio.html",
+                    "jazzle.html",
+                    form=song.form,
+                    genre=song.genre,
+                    key=song.key.name,
+                    clef="treble",
+                    time_signature=song.time_signature.name,
+                    composer=song.composer,
+                    performer=song.performer,
                     audio_clip=song.audio_clip,
                     guesses=session["guesses"],
                 )
